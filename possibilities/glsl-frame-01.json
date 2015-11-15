@@ -1,0 +1,29 @@
+{
+	"name": "circle",
+	"author": {
+		"name": "Patricio Gonzalez Vivo",
+		"web": "patricio.io",
+		"twitter": "@patriciogv",
+		"frame": "openFrame.io/patriciogv" 	// ??
+	},
+	"date": "Feb 01, 2015",		// Human readable
+	"expriation": "01 01 16", 	// Valid until the end of this year
+	"reload": "0 9-18 * * *", 	// (Cron Syntax) https://en.wikipedia.org/wiki/Cron
+								// very hour, on the hour, from 9 A.M. through 6 P.M., every day. 
+	"type": "glsl",				// This should check for dependencies to run this frame, in this case installing glslViewer
+	"uniforms": {
+		"tex01" : {
+			"type": "sampler2D",
+			"url": "http://i.ytimg.com/vi/yaqe1qesQ8c/maxresdefault.jpg"	// Load a texture for this shader
+		},
+		"u_mouse" : {	// overload the default mouse input with a input list of fallbacks
+			"type": "vec2",
+			"input": [ "localhost:3333/osc/cursor", "http://stream.openFrame.io:3333/osc/cursor", "/dev/mouse"]
+			// Try first loading custom local OSC server (could be running a Kinect or leapMotion server using "start"/"stop", a remote OSC server, the local mouse device
+		}
+	},
+	"fragment": {
+		"type": "url",
+		"value": "http://patriciogonzalezvivo.com/2015/thebookofshaders/07/circle.frag"	// The shader is loaded using 
+	}
+}

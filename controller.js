@@ -15,6 +15,8 @@ var config = require('./config'),
 
 downloader.setDownloadDir(config('download_dir'));
 
+var currentArtwork = null;
+
 /**
  * Display an artwork.
  * @param  {Object} artwork
@@ -29,16 +31,22 @@ function changeArtwork(artwork) {
         downloader.downloadFile(artwork.url, artwork._id + file_name, function(file) {
             console.log('file downloaded: ', file);
 
-            var command = artwork.format.player + ' ' + file.path;
+            var command = artwork.format.start_command + ' ' + file.path;
             console.log(command);
-            proc_man.killCurrentProcess();
-            proc_man.startProcess(command);
+            // proc_man.killCurrentProcess();
+            // proc_man.startProcess(command);
+            if (currentArtwork) proc_man.exec(currentArtwork.format.end_command);
+            proc_man.exec(command);
+            currentArtwork = artwork;
         });
     } else {
-        var command = artwork.format.player + ' ' + artwork.url;
+        var command = artwork.format.start_command + ' ' + artwork.url;
         console.log(command);
-        proc_man.killCurrentProcess();
-        proc_man.startProcess(command);
+        // proc_man.killCurrentProcess();
+        // proc_man.startProcess(command);
+        if (currentArtwork) proc_man.exec(currentArtwork.format.end_command);
+        proc_man.exec(command);
+        currentArtwork = artwork;
     }
 }
 

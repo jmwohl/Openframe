@@ -1,0 +1,56 @@
+{
+	"name": "circle",
+	"author": {
+		"name": "Patricio Gonzalez Vivo",
+		"web": "patricio.io",
+		"twitter": "@patriciogv",
+		"frame": "openFrame.io/patriciogv" 	// ??
+	},
+	"date": "Feb 01, 2015",		// Human readable
+	"expriation": "01 01 16", 	// Valid until the end of this year
+	"reload": "0 9-18 * * *", 	// (Cron Syntax) https://en.wikipedia.org/wiki/Cron
+								// very hour, on the hour, from 9 A.M. through 6 P.M., every day. 
+	"type": "glsl",				// This should check for dependencies to run this frame, in this case installing glslViewer
+	"uniforms": {
+		"tex01" : {
+			"type": "sampler2D",
+			"url": "http://i.ytimg.com/vi/yaqe1qesQ8c/maxresdefault.jpg"	// Load a texture for this shader
+		},
+		"u_mouse" : {	// overload the default mouse input with a input list of fallbacks
+			"type": "vec2",
+			"input": [ "localhost:3333/osc/cursor", "http://stream.openFrame.io:3333/osc/cursor", "/dev/mouse"]
+			// Try first loading custom local OSC server (could be running a Kinect or leapMotion server using "start"/"stop", a remote OSC server, the local mouse device
+		}
+	},
+	"fragment": {
+		"type": "string",
+		"value": "
+			#ifdef GL_ES
+			precision mediump float;
+			#endif
+
+			// custom uniforms
+			uniform sampler2D tex01;
+
+			// default uniforms
+			uniform vec2 u_resolution; 
+			uniform vec2 u_mouse;
+			uniform float u_time;
+
+			float circle(in vec2 _st, in float _radius){
+			    vec2 l = _st-vec2(0.5);
+				return 1.-smoothstep(_radius-(_radius*0.01),
+			                         _radius+(_radius*0.01),
+			                         dot(l,l)*4.0);
+			}
+
+			void main(){
+				vec2 st = gl_FragCoord.xy/u_resolution.xy;
+				
+				vec3 color = texture2D(tex01,st).rgb * circle(st,0.9);
+
+				gl_FragColor = vec4( color, 1.0 );
+			}
+		"
+	}
+}

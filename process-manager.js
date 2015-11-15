@@ -52,6 +52,33 @@ function killProcess(pid) {
 }
 
 /**
+ * Execute the kill command.
+ * @param  {[type]} command [description]
+ * @return {[type]}         [description]
+ */
+function killCommand(command) {
+    console.log('killCommand: ', command);
+    exec(command, function(err, stdout, stderr) {
+        if (err) {
+            console.log(err);
+        }
+    });
+}
+
+/**
+ * light wrapper on exec, outputting errors.
+ * @param  {String} command
+ */
+function _exec(command) {
+    console.log('exec: ', command);
+    exec(command, function(err, stdout, stderr) {
+        if (err) {
+            console.log(err);
+        }
+    });
+}
+
+/**
  * Kill the currently running process (top of the stack)
  */
 function killCurrentProcess() {
@@ -124,7 +151,7 @@ function _killAllDescendents(pid, signal, callback) {
     }
 }
 
-exports.exec = exec;
+exports.exec = _exec;
 exports.startProcess = startProcess;
 exports.killProcess = killProcess;
 exports.killCurrentProcess = killCurrentProcess;
