@@ -119,3 +119,11 @@ module.exports = function(socket, pubsub) {
 * Example plugins (e.g. GPIO access)
 * How do artworks interact with plugins?
 * Are plugins able to publish their own events? Should we define a namespace structure? Channels?
+
+### Flow
+- start frame
+- load plugins
+- authenticate to API server
+- connect to pubsub
+- fetch current state
+

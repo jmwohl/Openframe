@@ -5,7 +5,9 @@
  */
 
 // dependencies
-var program = require('commander');
+var program = require('commander'),
+    // add frame controller
+    FrameController = require('./controller');
 program
     .version('0.1.0')
     .option('-u, --username <username>', 'Username to which this frame will be linked.')
@@ -37,11 +39,16 @@ config('api_port', program.apiport);
 config('install_plugins', program.installplugins);
 
 
-// add frame controller
-require('./controller');
+
+
+var FrameController = new FrameController();
+
+
 
 // add plugins modules
 require('./plugins');
 
 // Initiate websocket connection to the api server
-require('./sockets').connect();
+// require('./sockets').connect();
+
+// require('./pubsub');

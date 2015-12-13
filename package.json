@@ -12,12 +12,13 @@
     "bluebird": "^2.9.34",
     "brightness": "^2.2.0",
     "commander": "^2.8.1",
+    "faye": "^1.1.2",
     "ini": "^1.3.4",
     "jsonfile": "^2.2.1",
+    "openframe-gpio": "git+https://git@github.com/jmwohl/Openframe-GPIO.git",
+    "openframe-keystroke": "git+https://git@github.com/jmwohl/Openframe-Keystroke.git",
     "ps-tree": "^1.0.0",
     "socket.io": "^1.3.6",
-    "socket.io-client": "^1.3.6",
-    "openframe-gpio": "git+https://git@github.com/jmwohl/Openframe-GPIO.git",
-    "openframe-keystroke": "git+https://git@github.com/jmwohl/Openframe-Keystroke.git"
+    "socket.io-client": "^1.3.6"
   }
 }
