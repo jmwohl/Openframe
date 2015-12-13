@@ -41,12 +41,12 @@ config('install_plugins', program.installplugins);
 
 
 
-var FrameController = new FrameController();
+var FC = new FrameController();
 
 
 
 // add plugins modules
-require('./plugins');
+// require('./plugins');
 
 // Initiate websocket connection to the api server
 // require('./sockets').connect();
