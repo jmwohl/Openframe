@@ -2,5 +2,10 @@
   "plugins": {
     "openframe-gpio": "git+https://git@github.com/jmwohl/Openframe-GPIO.git",
     "openframe-keystroke": "git+https://git@github.com/jmwohl/Openframe-Keystroke.git"
+  },
+  "auth": {
+    "email": "test@openframe.io",
+    "password": "asdf",
+    "accessToken": ""
   }
 }

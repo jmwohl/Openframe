@@ -6,7 +6,8 @@
 
 // app dependencies
 var util = require('util'),
-    EventEmitter = require('events').EventEmitter;
+    EventEmitter = require('events').EventEmitter,
+    Swagger = require('swagger-client');
 
 var config = require('./config'),
     downloader = require('./downloader'),
@@ -15,13 +16,38 @@ var config = require('./config'),
     PluginManager = require('./plugin-manager'),
     pubsub = require('./pubsub'),
     proc_man = require('./process-manager'),
-    // aw = require('./artwork'),
+    aw = require('./artwork'),
     brightness = require('brightness');
 
+// set all downloads to go to the correct spot
 downloader.setDownloadDir(config('download_dir'));
+
+
+
+
+
 
 var FrameController = function() {
     this.pluginManager = new PluginManager(this, pubsub);
+
+    this.rest = new Swagger({
+            url: 'http://localhost:8888/explorer/swagger.json',
+            usePromise: true
+        })
+        .then(function(client) {
+            console.log('client', client.OpenframeUser.OpenframeUser_login);
+            var creds = {
+                email: "test@openframe.io",
+                password: "asdf"
+            };
+            client.OpenframeUser.OpenframeUser_login({credentials: creds})
+                .then(function(resp) {
+                    console.log('resp', resp);
+                })
+                .catch(function(err) {
+                    console.log('err', err);
+                });
+        });
 
     if (config('install_plugins')) {
         console.log('loading plugins');
