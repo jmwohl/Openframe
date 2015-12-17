@@ -42,6 +42,9 @@ var FrameController = function() {
             };
             client.OpenframeUser.OpenframeUser_login({credentials: creds})
                 .then(function(resp) {
+                    if (resp.id) {
+                        client.OpenframeUser.OpenframeUser_findOne({credentials: creds})
+                    }
                     console.log('resp', resp);
                 })
                 .catch(function(err) {

@@ -3,7 +3,7 @@
 var faye = require('faye');
 
 // add a pubsub client for the API server
-var pubsub = new faye.Client('http://localhost:8000/faye');
+var pubsub = new faye.Client('http://localhost:8889/faye');
 
 // handlers for pubsub connection events
 pubsub.on('transport:down', function() {
