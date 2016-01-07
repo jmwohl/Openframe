@@ -20,25 +20,51 @@ function getPlatform() {
     }
 }
 
-module.exports = (function() {
-    var options = {
-        api_protocol: 'http',
-        api_domain: 'localhost',
-        api_port: '8888',
-        download_dir: './artwork/',
-        platform: getPlatform()
-    };
+// function saveConf(ofrc) {
 
-    function option(name, value) {
-        if (!name) {
-            return undefined;
-        }
+// }
 
-        if (value !== undefined) {
-            options[name] = value;
-        }
-        return options[name];
-    }
+// function loadConf() {
 
-    return option;
-})();
+// }
+
+
+// module.exports = {};
+
+// var default_conf = {
+//     api_protocol: 'http',
+//     api_domain: 'localhost',
+//     api_port: '8888',
+//     download_dir: './artwork/',
+//     platform: getPlatform()
+// };
+
+// module.exports = {
+//     options: {},
+//     set: function(obj) {
+//         this.options = obj;
+//     }
+// };
+
+// module.exports = (function() {
+//     var options = {
+//         api_protocol: 'http',
+//         api_domain: 'localhost',
+//         api_port: '8888',
+//         download_dir: './artwork/',
+//         platform: getPlatform()
+//     };
+
+//     function option(name, value) {
+//         if (!name) {
+//             return undefined;
+//         }
+
+//         if (value !== undefined) {
+//             options[name] = value;
+//         }
+//         return options[name];
+//     }
+
+//     return option;
+// })();

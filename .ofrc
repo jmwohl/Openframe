@@ -4,8 +4,15 @@
     "openframe-keystroke": "git+https://git@github.com/jmwohl/Openframe-Keystroke.git"
   },
   "auth": {
+    "accessToken": "",
     "email": "test@openframe.io",
-    "password": "asdf",
-    "accessToken": ""
+    "password": "asdf"
+  },
+  "settings": {
+    "frame_name": "Home Frame",
+    "api_protocol": "http",
+    "api_domain": "localhost",
+    "api_port": "8888",
+    "download_dir": "./artwork/"
   }
 }

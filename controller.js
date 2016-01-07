@@ -9,55 +9,41 @@ var util = require('util'),
     EventEmitter = require('events').EventEmitter,
     Swagger = require('swagger-client');
 
-var config = require('./config'),
-    downloader = require('./downloader'),
+var downloader = require('./downloader'),
     url = require('url'),
     path = require('path'),
     PluginManager = require('./plugin-manager'),
     pubsub = require('./pubsub'),
     proc_man = require('./process-manager'),
     aw = require('./artwork'),
+    rest = require('./rest'),
+    auth = require('./auth'),
     brightness = require('brightness');
 
 // set all downloads to go to the correct spot
-downloader.setDownloadDir(config('download_dir'));
+// downloader.setDownloadDir(config('download_dir'));
 
 
 
-
-
-
-var FrameController = function() {
+var FrameController = function(config) {
     this.pluginManager = new PluginManager(this, pubsub);
 
-    this.rest = new Swagger({
+    new Swagger({
             url: 'http://localhost:8888/explorer/swagger.json',
             usePromise: true
         })
         .then(function(client) {
             console.log('client', client.OpenframeUser.OpenframeUser_login);
-            var creds = {
-                email: "test@openframe.io",
-                password: "asdf"
-            };
-            client.OpenframeUser.OpenframeUser_login({credentials: creds})
-                .then(function(resp) {
-                    if (resp.id) {
-                        client.OpenframeUser.OpenframeUser_findOne({credentials: creds})
-                    }
-                    console.log('resp', resp);
-                })
-                .catch(function(err) {
-                    console.log('err', err);
-                });
+            rest.setClient(client);
+            auth.login(config.auth);
         });
 
-    if (config('install_plugins')) {
-        console.log('loading plugins');
-        this.pluginManager.installPlugins();
-    } else {
-        this.pluginManager.initPlugins(pubsub);
-    }
+    // if (config('install_plugins')) {
+    //     console.log('loading plugins');
+    //     this.pluginManager.installPlugins();
+    // } else {
+    //     this.pluginManager.initPlugins(pubsub);
+    // }
 };
 
 // inherit from EventEmitter
@@ -122,14 +108,14 @@ FrameController.prototype.changeArtwork = function(artwork) {
  * Turn on the frame display.
  */
 FrameController.prototype.displayOn = function() {
-    switch (config.option('platform')) {
-        case 'mac':
-            break;
-        case 'windows':
-            break;
-        default:
-            // linux
-    }
+    // switch (config.option('platform')) {
+    //     case 'mac':
+    //         break;
+    //     case 'windows':
+    //         break;
+    //     default:
+    //         // linux
+    // }
 };
 
 /**
@@ -137,14 +123,14 @@ FrameController.prototype.displayOn = function() {
  * @return {[type]} [description]
  */
 FrameController.prototype.displayOff = function() {
-    switch (config.option('platform')) {
-        case 'mac':
-            break;
-        case 'windows':
-            break;
-        default:
-            // linux
-    }
+    // switch (config.option('platform')) {
+    //     case 'mac':
+    //         break;
+    //     case 'windows':
+    //         break;
+    //     default:
+    //         // linux
+    // }
 };
 
 /**
