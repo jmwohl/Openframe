@@ -6,12 +6,15 @@
   "auth": {
     "email": "jon@openframe.io",
     "password": "asdf",
-    "access_token": "1BWMWypBS6mUqQZRGJsXYCtp08FnKLj1LoOewQ4KoaNomrAJdtkhYFj6nqr0uBVq"
+    "access_token": "EXnsZbZqYJD7oWDapCVCVbjJdimDVVb2kzEiwXGEmBBSc7Ergk40IzN6ZfYacWb3"
   },
   "settings": {
     "api_protocol": "http",
     "api_domain": "localhost",
     "api_port": "8888",
+    "pubsub_protocol": "http",
+    "pubsub_domain": "localhost",
+    "pubsub_port": "8889",
     "download_dir": "./artwork/"
   },
   "frame": {
@@ -22,22 +25,22 @@
     "created": "2016-01-18T19:38:42.928Z",
     "modified": "2016-01-18T19:38:42.928Z",
     "_current_artwork": {
-      "title": "Example Website",
+      "title": "Example Shader",
       "description": null,
       "is_public": true,
-      "url": "http://www.flyingfrying.com/",
+      "url": "http://jonathanwohl.com/test.frag",
       "author_name": null,
-      "id": "569d3c2971817b352f5eb085",
-      "created": "2016-01-18T19:25:29.004Z",
-      "modified": "2016-01-18T19:25:29.004Z",
+      "id": "569d3c2971817b352f5eb084",
+      "created": "2016-01-18T19:25:29.003Z",
+      "modified": "2016-01-18T19:25:29.003Z",
       "formatId": null,
       "_format": {
-        "name": "website",
-        "download": false,
-        "start_command": "init /usr/bin/chromium --kiosk",
-        "end_command": "pkill -f xinit",
-        "category": "web",
-        "id": "569d3c2971817b352f5eb08b"
+        "name": "shader (glslViewer)",
+        "download": true,
+        "start_command": "glslViewer",
+        "end_command": "pkill -f glslViewer",
+        "category": "shader",
+        "id": "569d3c2971817b352f5eb08a"
       }
     }
   }

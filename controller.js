@@ -41,7 +41,10 @@ fc.init = function() {
 
     this.config = config;
 
-    this.buildRestClient()
+    var settings = config.ofrc.settings,
+        api_url = settings.api_protocol + '://' +settings.api_domain + ':' + settings.api_port;
+
+    this.buildRestClient(api_url)
         .then(this.login)
         .then(this.connect)
         .then(this.ready)
@@ -50,12 +53,12 @@ fc.init = function() {
         });
 };
 
-fc.buildRestClient = function() {
+fc.buildRestClient = function(api_url) {
     debug('buildRestClient');
 
     return new Promise(function(resolve, reject) {
         new Swagger({
-            url: 'http://localhost:8888/explorer/swagger.json',
+            url: api_url+'/explorer/swagger.json',
             usePromise: true
         }).then(function(client) {
             // To see all available methods:

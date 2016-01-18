@@ -6,10 +6,12 @@ var ps = module.exports = {};
 
 ps.init = function(fc) {
     ps.fc = fc;
-    var frame = fc.config.ofrc.frame;
+    var settings = fc.config.ofrc.settings,
+        frame = fc.config.ofrc.frame,
+        pubsub_url = settings.pubsub_protocol + '://' +settings.pubsub_domain + ':' + settings.pubsub_port;
 
     // add a pubsub client for the API server
-    ps.client = new faye.Client('http://localhost:8889/faye');
+    ps.client = new faye.Client(pubsub_url+'/faye');
 
     // handlers for pubsub connection events
     ps.client.on('transport:down', function() {
