@@ -4,15 +4,41 @@
     "openframe-keystroke": "git+https://git@github.com/jmwohl/Openframe-Keystroke.git"
   },
   "auth": {
-    "accessToken": "",
-    "email": "test@openframe.io",
-    "password": "asdf"
+    "email": "jon@openframe.io",
+    "password": "asdf",
+    "access_token": "1BWMWypBS6mUqQZRGJsXYCtp08FnKLj1LoOewQ4KoaNomrAJdtkhYFj6nqr0uBVq"
   },
   "settings": {
-    "frame_name": "Home Frame",
     "api_protocol": "http",
     "api_domain": "localhost",
     "api_port": "8888",
     "download_dir": "./artwork/"
+  },
+  "frame": {
+    "name": "Home",
+    "settings": {},
+    "id": "569d3f4271817b352f5eb093",
+    "ownerId": "569d3c2971817b352f5eb08e",
+    "created": "2016-01-18T19:38:42.928Z",
+    "modified": "2016-01-18T19:38:42.928Z",
+    "_current_artwork": {
+      "title": "Example Website",
+      "description": null,
+      "is_public": true,
+      "url": "http://www.flyingfrying.com/",
+      "author_name": null,
+      "id": "569d3c2971817b352f5eb085",
+      "created": "2016-01-18T19:25:29.004Z",
+      "modified": "2016-01-18T19:25:29.004Z",
+      "formatId": null,
+      "_format": {
+        "name": "website",
+        "download": false,
+        "start_command": "init /usr/bin/chromium --kiosk",
+        "end_command": "pkill -f xinit",
+        "category": "web",
+        "id": "569d3c2971817b352f5eb08b"
+      }
+    }
   }
 }

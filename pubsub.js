@@ -2,24 +2,32 @@
 
 var faye = require('faye');
 
-// add a pubsub client for the API server
-var pubsub = new faye.Client('http://localhost:8889/faye');
+var ps = module.exports = {};
 
-// handlers for pubsub connection events
-pubsub.on('transport:down', function() {
-    // the pubsub client is offline
-    console.log('pubsub client dsconnected');
-    pubsub.publish('/frame/disconnected', '566b234f0ddfd681376d30fc');
-});
+ps.init = function(fc) {
+    ps.fc = fc;
+    var frame = fc.config.ofrc.frame;
 
-pubsub.on('transport:up', function() {
-    // the pubsub client is online
-    console.log('pubsub client connected');
-    pubsub.publish('/frame/connected', '566b234f0ddfd681376d30fc');
-});
+    // add a pubsub client for the API server
+    ps.client = new faye.Client('http://localhost:8889/faye');
 
-pubsub.subscribe('/frame/updated/*', function(data) {
-    console.log(data);
-});
+    // handlers for pubsub connection events
+    ps.client.on('transport:down', function() {
+        // the pubsub client is offline
+        console.log('pubsub client dsconnected');
+    });
 
-module.exports = pubsub;
+    ps.client.on('transport:up', function() {
+        // the pubsub client is online
+        console.log('pubsub client connected');
+        ps.client.publish('/frame/connected', frame.id);
+    });
+
+    ps.client.subscribe('/frame/updated/'+frame.id, function(data) {
+        console.log(data);
+        ps.fc.updateFrame()
+            .then(ps.fc.changeArtwork);
+    });
+
+    return ps.client;
+};

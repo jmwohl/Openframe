@@ -6,149 +6,231 @@
 
 // app dependencies
 var util = require('util'),
+    debug = require('debug')('frame_controller'),
     EventEmitter = require('events').EventEmitter,
     Swagger = require('swagger-client');
 
 var downloader = require('./downloader'),
+    pubsub = require('./pubsub'),
     url = require('url'),
     path = require('path'),
-    PluginManager = require('./plugin-manager'),
-    pubsub = require('./pubsub'),
-    proc_man = require('./process-manager'),
     aw = require('./artwork'),
-    rest = require('./rest'),
-    auth = require('./auth'),
-    brightness = require('brightness');
+    proc_man = require('./process-manager'),
+    PluginManager = require('./plugin-manager'),
+    config = require('./config');
 
 // set all downloads to go to the correct spot
 // downloader.setDownloadDir(config('download_dir'));
 
 
-
-var FrameController = function(config) {
-    this.pluginManager = new PluginManager(this, pubsub);
-
-    new Swagger({
-            url: 'http://localhost:8888/explorer/swagger.json',
-            usePromise: true
-        })
-        .then(function(client) {
-            console.log('client', client.OpenframeUser.OpenframeUser_login);
-            rest.setClient(client);
-            auth.login(config.auth);
-        });
-
-    // if (config('install_plugins')) {
-    //     console.log('loading plugins');
-    //     this.pluginManager.installPlugins();
-    // } else {
-    //     this.pluginManager.initPlugins(pubsub);
-    // }
-};
+var fc = module.exports = {};
 
 // inherit from EventEmitter
-util.inherits(FrameController, EventEmitter);
-
-// pubsub.
-
-// // wire up default pubsub 'command' events
-// pubsub.on('command:artwork:update', changeArtwork);
-// pubsub.on('command:display:rotate', rotateDisplay);
-// pubsub.on('command:display:brightness', setBrightness);
-// pubsub.on('command:display:on', displayOn);
-// pubsub.on('command:display:off', displayOff);
+util.inherits(fc, EventEmitter);
 
 /**
- * Display an artwork.
- * @param  {Object} artwork
+ * Initialize the frame controller
+ * - generate Swagger client
+ * - login user
+ * - connect frame
+ * TODO:
+ * - load plugins
  */
-FrameController.prototype.changeArtwork = function(artwork) {
-    console.log(artwork);
+fc.init = function() {
+    debug('init');
 
-    var curArt = aw.getCurrentArtwork();
+    this.config = config;
 
-    if (artwork.format.download) {
+    this.buildRestClient()
+        .then(this.login)
+        .then(this.connect)
+        .then(this.ready)
+        .catch(function(err) {
+            debug(err);
+        });
+};
+
+fc.buildRestClient = function() {
+    debug('buildRestClient');
+
+    return new Promise(function(resolve, reject) {
+        new Swagger({
+            url: 'http://localhost:8888/explorer/swagger.json',
+            usePromise: true
+        }).then(function(client) {
+            // To see all available methods:
+            // debug(client);
+            fc.client = client;
+            resolve(client);
+        }).catch(function(err) {
+            reject(err);
+        });
+    });
+};
+
+fc.login = function(client) {
+    debug('login');
+
+    var creds = fc.config.ofrc.auth;
+    return new Promise(function(resolve, reject) {
+        client.OpenframeUser.OpenframeUser_login({
+                credentials: creds
+            })
+            .then(function(resp) {
+                if (resp.obj.id) {
+                    creds.access_token = resp.obj.id;
+                    client.clientAuthorizations.add('access_token', new Swagger.ApiKeyAuthorization('access_token', resp.obj.id, 'query'));
+                }
+                resolve(resp.obj.userId);
+            })
+            .catch(function(err) {
+                console.log('err', err);
+                reject(err);
+            });
+    });
+};
+
+/**
+ * Connect this Frame. If the Frame has not yet been created, i.e. there is no
+ * id on the Frame object in ofrc, create a new Frame.
+ *
+ * @param  {[type]} userId [description]
+ * @return {[type]}        [description]
+ */
+fc.connect = function(userId) {
+    debug('connect', userId);
+
+    return new Promise(function(resolve, reject) {
+        // called when frame is ready to connect
+        function readyToConnect() {
+            fc.pubsub = pubsub.init(fc);
+            resolve();
+        }
+
+        // do we already have an id? if so pull latest state
+
+        fc.updateFrame()
+            .then(readyToConnect)
+            .catch(function(err) {
+                // In case of 404, we can capture here...
+                // var code = err.errObj.response.statusCode;
+
+                // the Frame is either not stored locally, or is missing
+                // on the server.
+                fc.registerNewFrame(userId)
+                    .then(readyToConnect)
+                    .catch(reject);
+            });
+    });
+};
+
+/**
+ * Grab and store the latest Frame state from the server.
+ * @return {Promise}
+ */
+fc.updateFrame = function() {
+    debug('updateFrame', fc.client);
+
+    var frame = fc.config.ofrc.frame;
+
+    return new Promise(function(resolve, reject) {
+        if (frame && frame.id) {
+            fc.client.Frame.Frame_findById({id: frame.id})
+                .then(function(data) {
+                    debug('Frame_findById', data);
+                    var frame = data.obj;
+                    fc.config.ofrc.frame = frame;
+                    fc.config.save();
+                    resolve(frame);
+                })
+                .catch(reject);
+        } else {
+            reject();
+        }
+    });
+};
+
+/**
+ * Register this as a new frame for user [userId]. This creates a new
+ * Frame object on the server via the REST api.
+ *
+ * @param  {[type]} userId [description]
+ * @return {[type]}        [description]
+ */
+fc.registerNewFrame = function(userId) {
+    debug('registerNewFrame', userId);
+
+    var frame = fc.config.ofrc.frame;
+    return new Promise(function(resolve, reject) {
+        fc.client.OpenframeUser.OpenframeUser_prototype_create_frames({
+                data: {
+                    name: frame.name,
+                    settings: {}
+                },
+                id: userId
+            })
+            .then(function(data) {
+                var frame = data.obj;
+                fc.config.ofrc.frame = frame;
+                fc.config.save();
+                resolve(frame);
+            })
+            .catch(reject);
+    });
+};
+
+/**
+ * Called when the frame has finished initializing.
+ */
+fc.ready = function() {
+    debug('ready', fc.config.ofrc.frame);
+    var frame = fc.config.ofrc.frame;
+
+    if (frame && frame._current_artwork) {
+        fc.changeArtwork();
+    }
+};
+
+
+/**
+ * Change the artwork being displayed.
+ *
+ * TODO: clean this up, for the love of God.
+ */
+fc.changeArtwork = function() {
+    var frame = fc.config.ofrc.frame,
+        artwork = frame._current_artwork,
+        curArt = aw.getCurrentArtwork();
+
+    if (artwork._format.download) {
         var parsed = url.parse(artwork.url),
             file_name = path.basename(parsed.pathname);
 
         downloader.downloadFile(artwork.url, artwork._id + file_name, function(file) {
             console.log('file downloaded: ', file);
-            var command = artwork.format.start_command + ' ' + file.path;
+            var command = artwork._format.start_command + ' ' + file.path;
             console.log(command);
             if (curArt) {
-                proc_man.exec(curArt.format.end_command, function() {
+                proc_man.exec(curArt._format.end_command, function() {
                     proc_man.startProcess(command);
-                    // proc_man.killCurrentProcess();
                     aw.setCurrentArtwork(artwork);
                 });
             } else {
                 proc_man.startProcess(command);
-                // proc_man.killCurrentProcess();
                 aw.setCurrentArtwork(artwork);
             }
         });
     } else {
-        var command = artwork.format.start_command + ' ' + artwork.url;
+        var command = artwork._format.start_command + ' ' + artwork.url;
         console.log(command);
         if (curArt) {
-            proc_man.exec(curArt.format.end_command, function() {
+            proc_man.exec(curArt._format.end_command, function() {
                 proc_man.startProcess(command);
-                // proc_man.killCurrentProcess();
                 aw.setCurrentArtwork(artwork);
             });
         } else {
             proc_man.startProcess(command);
-            // proc_man.killCurrentProcess();
             aw.setCurrentArtwork(artwork);
         }
     }
 };
-
-/**
- * Turn on the frame display.
- */
-FrameController.prototype.displayOn = function() {
-    // switch (config.option('platform')) {
-    //     case 'mac':
-    //         break;
-    //     case 'windows':
-    //         break;
-    //     default:
-    //         // linux
-    // }
-};
-
-/**
- * Turn off the frame display.
- * @return {[type]} [description]
- */
-FrameController.prototype.displayOff = function() {
-    // switch (config.option('platform')) {
-    //     case 'mac':
-    //         break;
-    //     case 'windows':
-    //         break;
-    //     default:
-    //         // linux
-    // }
-};
-
-/**
- * Set the frame brightness.
- * @param {Number} val Brightness value between 0 and 1
- */
-FrameController.prototype.setBrightness = function(val) {
-    brightness.set(val, function() {
-        console.log('brightness set to: ', val);
-    });
-};
-
-/**
- * Set the frame display rotation.
- * @param  {Number} val Rotation value in degrees: 0, 90, 180, or 270
- */
-FrameController.prototype.rotateDisplay = function(val) {
-    // TODO
-};
-
-module.exports = FrameController;
