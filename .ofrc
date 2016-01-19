@@ -6,7 +6,7 @@
   "auth": {
     "email": "jon@openframe.io",
     "password": "asdf",
-    "access_token": "EXnsZbZqYJD7oWDapCVCVbjJdimDVVb2kzEiwXGEmBBSc7Ergk40IzN6ZfYacWb3"
+    "access_token": "u3MTcCirEUGt9pO9TEKjXvnSFlDl3FVERIpR33fs8SjYpcpsxxgI03R4GNUqEiOs"
   },
   "settings": {
     "api_protocol": "http",
@@ -38,7 +38,7 @@
         "name": "shader (glslViewer)",
         "download": true,
         "start_command": "glslViewer",
-        "end_command": "pkill -f glslViewer",
+        "end_command": "sudo pkill -f glslViewer",
         "category": "shader",
         "id": "569d3c2971817b352f5eb08a"
       }

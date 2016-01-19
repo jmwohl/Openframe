@@ -14,7 +14,6 @@ var downloader = require('./downloader'),
     pubsub = require('./pubsub'),
     url = require('url'),
     path = require('path'),
-    aw = require('./artwork'),
     proc_man = require('./process-manager'),
     PluginManager = require('./plugin-manager'),
     config = require('./config');
@@ -197,43 +196,35 @@ fc.ready = function() {
 
 /**
  * Change the artwork being displayed.
- *
- * TODO: clean this up, for the love of God.
  */
 fc.changeArtwork = function() {
     var frame = fc.config.ofrc.frame,
         artwork = frame._current_artwork,
-        curArt = aw.getCurrentArtwork();
+        curArt = fc.current_artwork;
+
+    function startArt(command) {
+        if (curArt) {
+            proc_man.exec(curArt._format.end_command, function() {
+                proc_man.startProcess(command);
+                fc.current_artwork = artwork;
+            });
+        } else {
+            proc_man.startProcess(command);
+            fc.current_artwork = artwork;
+        }
+    }
 
     if (artwork._format.download) {
         var parsed = url.parse(artwork.url),
             file_name = path.basename(parsed.pathname);
 
-        downloader.downloadFile(artwork.url, artwork._id + file_name, function(file) {
-            console.log('file downloaded: ', file);
-            var command = artwork._format.start_command + ' ' + file.path;
-            console.log(command);
-            if (curArt) {
-                proc_man.exec(curArt._format.end_command, function() {
-                    proc_man.startProcess(command);
-                    aw.setCurrentArtwork(artwork);
-                });
-            } else {
-                proc_man.startProcess(command);
-                aw.setCurrentArtwork(artwork);
-            }
-        });
+        downloader.downloadFile(artwork.url, artwork._id + file_name)
+            .then(function(file) {
+                var command = artwork._format.start_command + ' ' + file.path;
+                startArt(command);
+            });
     } else {
         var command = artwork._format.start_command + ' ' + artwork.url;
-        console.log(command);
-        if (curArt) {
-            proc_man.exec(curArt._format.end_command, function() {
-                proc_man.startProcess(command);
-                aw.setCurrentArtwork(artwork);
-            });
-        } else {
-            proc_man.startProcess(command);
-            aw.setCurrentArtwork(artwork);
-        }
+        startArt(command);
     }
 };

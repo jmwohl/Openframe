@@ -6,8 +6,7 @@
 
 var jsonfile = require('jsonfile');
 
-var ofrc_file = './.ofrc',
-    conf = {};
+var ofrc_file = './.ofrc';
 
 /**
  * try to detect the device platform (i.e. linux, mac, windows)
@@ -28,10 +27,6 @@ function getPlatform() {
 function Config() {
     this.ofrc = {};
 }
-
-// Config.prototype.ofrc = {
-
-// };
 
 Config.prototype.save = function() {
     console.log('Config.save', this.ofrc);
@@ -70,41 +65,3 @@ Config.prototype.load = function() {
 };
 
 module.exports = new Config();
-
-// var default_conf = {
-//     api_protocol: 'http',
-//     api_domain: 'localhost',
-//     api_port: '8888',
-//     download_dir: './artwork/',
-//     platform: getPlatform()
-// };
-
-// module.exports = {
-//     options: {},
-//     set: function(obj) {
-//         this.options = obj;
-//     }
-// };
-
-// module.exports = (function() {
-//     var options = {
-//         api_protocol: 'http',
-//         api_domain: 'localhost',
-//         api_port: '8888',
-//         download_dir: './artwork/',
-//         platform: getPlatform()
-//     };
-
-//     function option(name, value) {
-//         if (!name) {
-//             return undefined;
-//         }
-
-//         if (value !== undefined) {
-//             options[name] = value;
-//         }
-//         return options[name];
-//     }
-
-//     return option;
-// })();
