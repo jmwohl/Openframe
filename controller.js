@@ -52,6 +52,16 @@ fc.init = function() {
         });
 };
 
+/**
+ * Auto-generates a semantic client for the REST API based
+ * on the swagger definition.
+ *
+ * A reference to the client is stored on the frame controller as
+ * `fc.client`
+ *
+ * @param  {String} api_url
+ * @return {Promise} A promise resolving with the generated client.
+ */
 fc.buildRestClient = function(api_url) {
     debug('buildRestClient');
 
@@ -70,6 +80,12 @@ fc.buildRestClient = function(api_url) {
     });
 };
 
+/**
+ * Authenticate to the API server using the supplied user/pass.
+ *
+ * @param  {Swagger} client Auto-generated swagger client
+ * @return {Promise} A promise resolving with the logged-in user's ID
+ */
 fc.login = function(client) {
     debug('login');
 
@@ -96,8 +112,8 @@ fc.login = function(client) {
  * Connect this Frame. If the Frame has not yet been created, i.e. there is no
  * id on the Frame object in ofrc, create a new Frame.
  *
- * @param  {[type]} userId [description]
- * @return {[type]}        [description]
+ * @param  {String} userId
+ * @return {Promise}
  */
 fc.connect = function(userId) {
     debug('connect', userId);
@@ -128,6 +144,7 @@ fc.connect = function(userId) {
 
 /**
  * Grab and store the latest Frame state from the server.
+ *
  * @return {Promise}
  */
 fc.updateFrame = function() {
@@ -156,8 +173,8 @@ fc.updateFrame = function() {
  * Register this as a new frame for user [userId]. This creates a new
  * Frame object on the server via the REST api.
  *
- * @param  {[type]} userId [description]
- * @return {[type]}        [description]
+ * @param  {String} userId
+ * @return {Promise} A promise resolving with the newly created Frame object
  */
 fc.registerNewFrame = function(userId) {
     debug('registerNewFrame', userId);
@@ -195,7 +212,8 @@ fc.ready = function() {
 
 
 /**
- * Change the artwork being displayed.
+ * Change the artwork being displayed to that which is stored in the
+ * Frame's _current_artwork.
  */
 fc.changeArtwork = function() {
     var frame = fc.config.ofrc.frame,

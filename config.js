@@ -4,7 +4,8 @@
  * Configuration module
  */
 
-var jsonfile = require('jsonfile');
+var jsonfile = require('jsonfile'),
+    debug = require('debug')('config');
 
 var ofrc_file = './.ofrc';
 
@@ -12,6 +13,7 @@ var ofrc_file = './.ofrc';
  * try to detect the device platform (i.e. linux, mac, windows)
  * @return {String} the platform
  */
+/*
 function getPlatform() {
     console.log(process.platform);
 
@@ -23,13 +25,14 @@ function getPlatform() {
         return 'windows';
     }
 }
+*/
 
 function Config() {
     this.ofrc = {};
 }
 
 Config.prototype.save = function() {
-    console.log('Config.save', this.ofrc);
+    debug('save');
     var self = this;
     var p = new Promise(function(resolve, reject) {
         jsonfile.writeFile(ofrc_file, self.ofrc, {
@@ -47,7 +50,7 @@ Config.prototype.save = function() {
 };
 
 Config.prototype.load = function() {
-    console.log('Config.load');
+    debug('load');
     var self = this;
     var p = new Promise(function(resolve, reject) {
         jsonfile.readFile(ofrc_file, function(err, ofrc) {
@@ -55,7 +58,6 @@ Config.prototype.load = function() {
                 reject(err);
                 return;
             }
-            console.log('ofrc loaded: ', ofrc);
             self.ofrc = ofrc;
             resolve(self.ofrc);
         });

@@ -3,3 +3,4 @@ node_modules/
 log/*
 artwork/
 npm-debug.log
+coverage/*
