@@ -26,6 +26,9 @@
   },
   "devDependencies": {
     "debug": "^2.2.0",
-    "npm": "^3.5.3"
+    "istanbul": "^0.4.2",
+    "mocha": "^2.3.4",
+    "npm": "^3.5.3",
+    "sinon": "^1.17.2"
   }
 }

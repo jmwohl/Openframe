@@ -15,7 +15,7 @@ var downloader = require('./downloader'),
     url = require('url'),
     path = require('path'),
     proc_man = require('./process-manager'),
-    PluginManager = require('./plugin-manager'),
+    pm = require('./plugin-manager'),
     config = require('./config');
 
 // set all downloads to go to the correct spot
@@ -41,7 +41,7 @@ fc.init = function() {
     this.config = config;
 
     var settings = config.ofrc.settings,
-        api_url = settings.api_protocol + '://' +settings.api_domain + ':' + settings.api_port;
+        api_url = settings.api_protocol + '://' + settings.api_domain + ':' + settings.api_port;
 
     this.buildRestClient(api_url)
         .then(this.login)
@@ -50,6 +50,18 @@ fc.init = function() {
         .catch(function(err) {
             debug(err);
         });
+};
+
+/**
+ * Called when the frame has finished initializing.
+ */
+fc.ready = function() {
+    debug('ready', fc.config.ofrc.frame);
+    var frame = fc.config.ofrc.frame;
+
+    if (frame && frame._current_artwork) {
+        fc.changeArtwork();
+    }
 };
 
 /**
@@ -67,7 +79,7 @@ fc.buildRestClient = function(api_url) {
 
     return new Promise(function(resolve, reject) {
         new Swagger({
-            url: api_url+'/explorer/swagger.json',
+            url: api_url + '/explorer/swagger.json',
             usePromise: true
         }).then(function(client) {
             // To see all available methods:
@@ -130,6 +142,7 @@ fc.connect = function(userId) {
         fc.updateFrame()
             .then(readyToConnect)
             .catch(function(err) {
+                debug(err);
                 // In case of 404, we can capture here...
                 // var code = err.errObj.response.statusCode;
 
@@ -148,24 +161,62 @@ fc.connect = function(userId) {
  * @return {Promise}
  */
 fc.updateFrame = function() {
-    debug('updateFrame', fc.client);
+    debug('updateFrame');
 
     var frame = fc.config.ofrc.frame;
 
     return new Promise(function(resolve, reject) {
         if (frame && frame.id) {
-            fc.client.Frame.Frame_findById({id: frame.id})
+            // a frame with an ID is present
+            fc.client.Frame.Frame_findById({
+                    id: frame.id
+                })
                 .then(function(data) {
-                    debug('Frame_findById', data);
+                    debug('Frame_findById - found', data);
                     var frame = data.obj;
                     fc.config.ofrc.frame = frame;
                     fc.config.save();
-                    resolve(frame);
+                    fc.updatePlugins(frame)
+                        .then(function() {
+                            resolve(frame);
+                        });
                 })
                 .catch(reject);
         } else {
             reject();
         }
+    });
+};
+
+/**
+ * Use the plugin manager module to update the plugins based on the current frame state.
+ *
+ * TODO: how to know which plugins to remove?
+ *
+ * @param  {[type]} frame [description]
+ * @return {[type]}       [description]
+ */
+fc.updatePlugins = function(frame) {
+    debug('updatePlugins');
+    return new Promise(function(resolve, reject) {
+        pm.installPlugins(frame.plugins)
+            .then(function() {
+                fc.initPlugins(frame.plugins);
+            })
+            .then(function() {
+                debug('Success initializing plugins');
+                resolve();
+            })
+            .catch(reject);
+    });
+};
+
+fc.initPlugins = function(plugins) {
+    debug('initPlugins', plugins);
+    return new Promise(function(resolve, reject) {
+        pm.initPlugins(plugins, fc)
+            .then(resolve)
+            .catch(reject);
     });
 };
 
@@ -184,7 +235,10 @@ fc.registerNewFrame = function(userId) {
         fc.client.OpenframeUser.OpenframeUser_prototype_create_frames({
                 data: {
                     name: frame.name,
-                    settings: {}
+                    settings: {},
+                    plugins: {
+                        'openframe-pluginexample': 'git+https://git@github.com/OpenframeProject/Openframe-PluginExample.git'
+                    }
                 },
                 id: userId
             })
@@ -192,24 +246,15 @@ fc.registerNewFrame = function(userId) {
                 var frame = data.obj;
                 fc.config.ofrc.frame = frame;
                 fc.config.save();
-                resolve(frame);
+                // update the plugins
+                fc.updatePlugins(frame)
+                    .then(function() {
+                        resolve(frame);
+                    });
             })
             .catch(reject);
     });
 };
-
-/**
- * Called when the frame has finished initializing.
- */
-fc.ready = function() {
-    debug('ready', fc.config.ofrc.frame);
-    var frame = fc.config.ofrc.frame;
-
-    if (frame && frame._current_artwork) {
-        fc.changeArtwork();
-    }
-};
-
 
 /**
  * Change the artwork being displayed to that which is stored in the
