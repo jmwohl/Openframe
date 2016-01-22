@@ -1,8 +1,5 @@
 {
   "auth": {
-    "email": "jon@openframe.io",
-    "password": "asdf",
-    "access_token": "PFs2KB6xwcE0VbvaDPqOQ2ma1YbZauNrFSmc2MSzrEUpwRm2KgWeB65VMuXSkEi9"
   },
   "settings": {
     "api_protocol": "http",
@@ -12,35 +9,5 @@
     "pubsub_domain": "localhost",
     "pubsub_port": "8889",
     "download_dir": "./artwork/"
-  },
-  "frame": {
-    "name": "Test Frame",
-    "settings": {},
-    "plugins": {
-      "openframe-pluginexample": "git+https://git@github.com/OpenframeProject/Openframe-PluginExample.git"
-    },
-    "id": "56a19a0e53a77bc882e7649a",
-    "ownerId": "56a198e553a77bc882e76496",
-    "created": "2016-01-22T02:55:10.605Z",
-    "modified": "2016-01-22T02:55:10.605Z",
-    "_current_artwork": {
-      "title": "Example Shader",
-      "description": null,
-      "is_public": true,
-      "url": "http://jonathanwohl.com/test.frag",
-      "author_name": null,
-      "id": "56a198e553a77bc882e7648c",
-      "created": "2016-01-22T02:50:13.499Z",
-      "modified": "2016-01-22T02:50:13.499Z",
-      "formatId": null,
-      "_format": {
-        "name": "shader (glslViewer)",
-        "download": true,
-        "start_command": "glslViewer",
-        "end_command": "pkill -f glslViewer",
-        "category": "shader",
-        "id": "56a198e553a77bc882e76492"
-      }
-    }
   }
 }
