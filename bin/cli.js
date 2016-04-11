@@ -10,6 +10,7 @@ var program = require('commander'),
     user = require('../src/user'),
     rest = require('../src/rest'),
     frame_controller = require('../src/controller'),
+    pexec = require('../src/process-manager').pexec,
     initializers;
 
 program
@@ -22,6 +23,7 @@ program
 
 // load config, frame, and user from local dot files
 initializers = [
+    checkForUpdates(),
     config.load(),
     frame.load(),
     user.load()
@@ -133,6 +135,26 @@ function saveAnswers(answers) {
     }
 
     return user.save();
+}
+
+function checkForUpdates() {
+    debug('checkForUpdates');
+    var cmd = 'npm outdated -g openframe';
+    // var cmd = 'npm outdated -g openframe openframe-image openframe-website openframe-glslviewer';
+    return pexec(cmd).then(function(result) {
+        if (result[1]) {
+            console.log('\n');
+            console.log('=============================================================================');
+            console.log('=============================================================================');
+            console.log('\n');
+            console.log('      NOTICE: There is a new version of openframe available! To update, run: ');
+            console.log('\n');
+            console.log('      > npm install -g openframe');
+            console.log('\n');
+            console.log('=============================================================================');
+            console.log('=============================================================================');
+        }
+    });
 }
 
 /**

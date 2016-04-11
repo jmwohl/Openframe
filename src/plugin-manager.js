@@ -1,6 +1,6 @@
 var debug = require('debug')('openframe:plugin_manager'),
-    execFile = require('child_process').execFile,
     exec = require('child_process').exec,
+    proc_man = require('./process-manager'),
 
     config = require('./config'),
 
@@ -117,14 +117,14 @@ function _installPlugin(package_name, version, force) {
     cmd += ' --save';
     return new Promise((resolve, reject) => {
         if (force) {
-            _runNpmCommand(cmd).then(function() {
+            proc_man.pexec(cmd).then(function() {
                 resolve(package_name);
             });
         } else {
             _checkPlugin(package_name, version).then(function(is_installed) {
                 if (!is_installed) {
                     // only install if it's not already installed.
-                    _runNpmCommand(cmd).then(function() {
+                    proc_man.pexec(cmd).then(function() {
                         resolve(package_name);
                     }).catch(function(err) {
                         debug('Could not install', package_name, version);
@@ -153,7 +153,7 @@ function _removePlugin(package_name) {
     var cmd = 'npm remove -g ' + package_name;
     cmd += ' --save';
     return new Promise((resolve, reject) => {
-        _runNpmCommand(cmd).then(function() {
+        proc_man.pexec(cmd).then(function() {
             resolve(package_name);
         }).catch(reject);
     });
@@ -176,7 +176,7 @@ function _checkPlugin(package_name, version) {
         cmd += '@'+version;
     }
     return new Promise((resolve, reject) => {
-        _runNpmCommand(cmd)
+        proc_man.pexec(cmd)
             .then(function() {
                 debug('plugin installed');
                 resolve(true);
@@ -218,21 +218,5 @@ function _initPlugin(plugin_name, ofPluginApi) {
             debug('ERROR - ', e);
             reject(e);
         }
-    });
-}
-
-
-
-function _runNpmCommand(cmd) {
-    return new Promise((resolve, reject) => {
-        exec(cmd, (err, stdout, stderr) => {
-            debug(`stdout: ${stdout}`);
-            debug(`stderr: ${stderr}`);
-            if (err) {
-                reject(err);
-            } else {
-                resolve();
-            }
-        });
     });
 }

@@ -108,8 +108,24 @@ function _blankScreen(_cb) {
     exec('dd if=/dev/zero of=/dev/fb0', cb);
 }
 
+// Wrap a child process exec in a Promise
+function _pexec(cmd) {
+    return new Promise((resolve, reject) => {
+        var cp = exec(cmd, (err, stdout, stderr) => {
+            debug(`stdout: ${stdout}`);
+            debug(`stderr: ${stderr}`);
+            if (err) {
+                reject(err);
+            } else {
+                resolve(stdout);
+            }
+        });
+    });
+}
+
 exports.exec = exec;
 exports.startProcess = startProcess;
 exports.killProcess = killProcess;
 exports.killCurrentProcess = killCurrentProcess;
 exports.stack = processStack;
+exports.pexec = _pexec;
