@@ -15,13 +15,15 @@ var pexec = require('./process-manager').pexec,
  * @param  {String}   file_url
  * @param  {String}   file_output_name
  */
-function downloadFile(file_url, file_output_name, cb) {
+function downloadFile(file_url, file_output_name) {
     return new Promise(function(resolve, reject) {
         var file_name = file_output_name,
             file_path = artworkDir + '/' + file_name;
 
         pexec('wget -O ' + file_path + ' ' + file_url)
-            .then(resolve)
+            .then(function() {
+                resolve(file_path);
+            })
             .catch(reject);
     });
 
