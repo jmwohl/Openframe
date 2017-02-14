@@ -48,34 +48,23 @@ frame.save = function(persist) {
     }).catch(debug);
 };
 
-/**
- * Fetch the current frame state from the server
- * @return {Promise}
- */
-frame.fetch = function() {
-    debug('fetch');
-    return new Promise(function(resolve, reject) {
-        if (frame.state && frame.state.id) {
-            // a frame with an ID is present
-            rest.client.Frame.Frame_findById({
-                id: frame.state.id
-            }).then(function(data) {
-                debug('Frame_findById - found', data);
+frame.create = function() {
+    function createSuccess(data) {
+        debug('frame.create success', data);
+        frame.state = data.obj;
+        return frame.persistStateToFile();
+    }
 
-                frame.state = data.obj;
-                frame.persistStateToFile().then(function() {
-                    resolve(frame.state);
-                });
-
-
-            }).catch(function(err) {
-                reject();
-            });
-        } else {
-            reject();
+    let newFrame = {
+        data: {
+            name: 'New Frame'
         }
-    });
-};
+    };
+
+    return rest.client.Frame.Frame_create(newFrame)
+        .then(createSuccess)
+        .catch(debug);
+}
 
 /**
  * Persist the local frame state to disk
@@ -124,3 +113,4 @@ frame.addFormat = function(format) {
     frame.formats[format.name] = format;
     frame.persistStateToFile();
 };
+

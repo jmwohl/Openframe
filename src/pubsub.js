@@ -1,56 +1,56 @@
 var faye = require('faye'),
     config = require('./config'),
     frame = require('./frame'),
-    user = require('./user'),
     debug = require('debug')('openframe:pubsub'),
+    rest = require('./rest'),
     ps = module.exports = {};
 
 ps.client = {};
 
 ps.init = function(fc) {
-    var pubsub_url = config.ofrc.pubsub_url,
-        clientAuth = {
-            outgoing: function(message, callback) {
-                // leave non-subscribe messages alone
-                if (message.channel !== '/meta/subscribe') {
-                    return callback(message);
-                }
+    return rest.client.OpenframeUser.OpenframeUser_config()
+        .then(function(conf_resp) {
+            debug(conf_resp);
+            config.ofrc.pubsub_url = conf_resp.obj.config.pubsub_url;
+            return config.save();
+        })
+        .then(function() {
 
-                // Add ext field if it's not present
-                if (!message.ext) {
-                    message.ext = {};
-                }
+            var pubsub_url = config.ofrc.pubsub_url;
 
-                // Set the auth token
-                message.ext.accessToken = user.state.access_token;
+            debug(pubsub_url);
 
-                // Carry on and send the message to the server
-                callback(message);
-            }
-        };
+            // add a pubsub client for the API server
+            ps.client = new faye.Client(pubsub_url);
+            // handlers for pubsub connection events
+            ps.client.on('transport:down', function() {
+                // the pubsub client is offline
+                debug('pubsub client dsconnected');
+            });
 
-    debug(pubsub_url);
-    // add a pubsub client for the API server
-    ps.client = new faye.Client(pubsub_url);
-    ps.client.addExtension(clientAuth);
-    // handlers for pubsub connection events
-    ps.client.on('transport:down', function() {
-        // the pubsub client is offline
-        debug('pubsub client dsconnected');
-    });
+            ps.client.on('transport:up', function() {
+                // the pubsub client is online
+                debug('pubsub client connected');
+                ps.client.publish('/frame/connected', frame.state.id);
+            });
 
-    ps.client.on('transport:up', function() {
-        // the pubsub client is online
-        debug('pubsub client connected');
-        ps.client.publish('/frame/connected', frame.state.id);
-    });
+            ps.client.subscribe('/frame/' + frame.state.id + '/db_updated', function(data) {
+                debug('/frame/' + frame.state.id + '/db_updated', data);
 
-    ps.client.subscribe('/frame/' + frame.state.id + '/db_updated', function(data) {
-        debug('/frame/' + frame.state.id + '/db_updated');
+                frame.state = data;
+                frame.persistStateToFile().then(fc.updateFrame);
+            });
 
-        // frame updated event handled, hand off frame updating logic to frame controller
-        fc.updateFrame();
-    });
+            ps.client.subscribe('/frame/' + frame.state.id + '/paired', function(data) {
+                debug('/frame/' + frame.state.id + '/paired', data);
+                fc.ready();
+                // frame updated event handled, hand off frame updating logic to frame controller
+                // fc.updateFrame(data);
+            });
 
-    return ps.client;
+            fc.pubsub = ps.client;
+
+            return ps.client;
+        });
+
 };

@@ -6,15 +6,12 @@
 var url = require('url'),
     path = require('path'),
     debug = require('debug')('openframe:frame_controller'),
-    Swagger = require('swagger-client'),
-
     downloader = require('./downloader'),
     pubsub = require('./pubsub'),
     proc_man = require('./process-manager'),
     pm = require('./extension-manager'),
     config = require('./config'),
     frame = require('./frame'),
-    user = require('./user'),
     rest = require('./rest'),
     Spinner = require('cli-spinner').Spinner,
     spinner = new Spinner('[%s]');
@@ -39,12 +36,7 @@ fc.init = function() {
     spinner.setSpinnerString(1);
     spinner.start();
 
-    this.login()
-        .then(this.connect)
-        .then(this.ready)
-        .catch(function(err) {
-            debug(err);
-        });
+    this.connect();
 };
 
 /**
@@ -152,47 +144,6 @@ fc.ready = function() {
     }
 };
 
-
-/**
- * Authenticate with the API server using the supplied user/pass.
- *
- * @return {Promise} A promise resolving with the logged-in user's ID
- */
-fc.login = function() {
-    debug('login');
-
-    var creds = user.state;
-    return new Promise(function(resolve, reject) {
-        rest.client.OpenframeUser.OpenframeUser_login({
-            credentials: creds
-        }).then(function(resp) {
-            if (resp.obj.id) {
-                creds.access_token = resp.obj.id;
-                rest.client.clientAuthorizations.add('access_token', new Swagger.ApiKeyAuthorization('access_token', resp.obj.id, 'query'));
-            }
-            rest.client.OpenframeUser.OpenframeUser_config().then(function(conf_resp) {
-                debug(resp);
-                config.ofrc.pubsub_url = conf_resp.obj.config.pubsub_url;
-                config.save().then(function() {
-                    resolve(resp.obj.userId);
-                });
-            });
-        }).catch(function(err) {
-            // login failed...
-            debug('Login failed. Please try again.');
-            spinner.stop(true);
-            console.log('[o]   Login failed. Please try again.');
-            console.log('\n');
-            user.state = {};
-            user
-                .save()
-                .then(function() {
-                    process.exit(0);
-                });
-        });
-    });
-};
-
 /**
  * Connect this Frame. If the Frame has not yet been created, i.e. there is no
  * id on the Frame object in ofrc, create a new Frame.
@@ -203,73 +154,60 @@ fc.login = function() {
 fc.connect = function(userId) {
     debug('connect', userId);
 
-    return new Promise(function(resolve, reject) {
-        // called when frame is ready to connect
-        function readyToConnect() {
-            debug('readyToConnect');
-            fc.pubsub = pubsub.init(fc);
-            resolve();
-        }
+    // called when frame is ready to connect
+    function initPubSub() {
+        debug('initPubSub');
+        return pubsub.init(fc);
+    }
 
-        // XXX - POTENTIAL BUG - catch extension init error separately, otherwise a new frame is created.
-        frame
-            .fetch()
-            .then(function() {
-                debug('ready to init...');
-                // initExtensions now always resolves, is never rejected
-                return pm.initExtensions(frame.state.extensions, fc.extensionApi);
-            })
-            .then(readyToConnect)
-            .catch(function(err) {
-                debug(err);
-                fc.registerNewFrame(userId)
-                    .then(readyToConnect)
-                    .catch(function(err) {
-                        debug(err);
-                        reject(err);
-                    });
-            });
-    });
-};
+    function displayPairingCode(frameState) {
+        console.log('[o]   New frame ready for pairing!');
+        console.log('\n');
+        console.log('Pairing code: ', frameState.pairing_code);
+        return frameState;
+    }
 
-/**
- * Register this as a new frame for user [userId]. This creates a new
- * Frame object on the server via the REST api.
- *
- * TODO: should this be on the frame model? a create method?
- *
- * @param  {String} userId
- * @return {Promise} A promise resolving with the newly created Frame object
- */
-fc.registerNewFrame = function(userId) {
-    debug('registerNewFrame', userId);
+    function initExtensions(frameState) {
+        return pm.initExtensions(frameState.extensions, fc.extensionApi);
+    }
 
-    return new Promise(function(resolve, reject) {
-        rest.client.OpenframeUser.OpenframeUser_prototype_create_owned_frames({
-            data: {
-                name: frame.state.name
-            },
-            id: userId
-        }).then(function(data) {
-            debug(data.obj);
-            frame.state = data.obj;
-            frame.persistStateToFile();
-            pm.installExtensions(frame.state.extensions)
-                .then(function() {
-                    debug('-----> extensions installed');
-                    pm.initExtensions(frame.state.extensions, fc.extensionApi)
-                        .then(function() {
-                            resolve(frame.state);
-                        });
-                })
-                .catch(function(err) {
-                    reject(err);
-                });
-        }).catch(function(err) {
-            debug(err);
-            reject(err);
-        });
-    });
+    if (!frame.state.id) {
+        // no frame exists, create a new one
+        frame.create()
+            .then(displayPairingCode)
+            .then(initExtensions)
+            .then(initPubSub);
+
+    } else if (!frame.state.ownerId) {
+        // frame exists, but isn't paired
+        displayPairingCode(frame.state);
+        initExtensions(frame.state)
+            .then(initPubSub);
+    } else {
+        // frame is paired to an owner, init extensions and load current state
+        initExtensions(frame.state)
+            .then(initPubSub)
+            .then(fc.ready);
+    }
+
+    // XXX - POTENTIAL BUG - catch extension init error separately, otherwise a new frame is created.
+    // frame
+    //     .fetch()
+    //     .then(function() {
+    //         debug('ready to init...');
+    //         // initExtensions now always resolves, is never rejected
+    //         return pm.initExtensions(frame.state.extensions, fc.extensionApi);
+    //     })
+    //     .then(readyToConnect)
+    //     .catch(function(err) {
+    //         debug(err);
+    //         fc.registerNewFrame(userId)
+    //             .then(readyToConnect)
+    //             .catch(function(err) {
+    //                 debug(err);
+    //                 reject(err);
+    //             });
+    //     });
 };
 
 /**
@@ -347,20 +285,16 @@ fc.updateFrame = function() {
     // let subscribers know the frame is updating
     fc.pubsub.publish('/frame/'+frame.state.id+'/frame_updating', frame.state.id);
 
-    // fetch the latest frame state, and update as needed
-    frame.fetch()
-        .then(function(new_state) {
-            if (frame.state.current_artwork) {
-                fc.changeArtwork()
-                    .then(function() {
-                        // success changing artwork, do nothing more...
-                    })
-                    .catch(function() {
-                        // error changing artwork, reset frame.state.current_artwork to true current
-                        frame.state.current_artwork = fc.current_artwork;
-                    });
-            }
-        });
+    if (frame.state.current_artwork) {
+        fc.changeArtwork()
+            .then(function() {
+                // success changing artwork, do nothing more...
+            })
+            .catch(function() {
+                // error changing artwork, reset frame.state.current_artwork to true current
+                frame.state.current_artwork = fc.current_artwork;
+            });
+    }
 };
 
 /**

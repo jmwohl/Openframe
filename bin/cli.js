@@ -2,17 +2,14 @@
 
 var program = require('commander'),
     inquirer = require('inquirer'),
-    fs = require('fs'),
     shell = require('shelljs'),
     debug = require('debug')('openframe:cli'),
     p = require('../package.json'),
     version = p.version.split('.').shift(),
     config = require('../src/config'),
     frame = require('../src/frame'),
-    user = require('../src/user'),
     rest = require('../src/rest'),
     frame_controller = require('../src/controller'),
-    proc_man = require('../src/process-manager'),
     initializers;
 
 program
@@ -20,14 +17,12 @@ program
     .option('-r, --reset', 'Reset this frame. Erases current frame data, and registers this as a new frame.')
     .option('-i, --install [extension]', 'Install an extension. The argument should be in the npm package name format, e.g. "openframe-image" or "openframe-image@^0.1.0"')
     .option('-u, --uninstall [extension]', 'Uninstall an extension. The argument should be the npm package name, e.g. "openframe-image"')
-    .arguments('[username] [password] [framename]')
     .parse(process.argv);
 
 // load config, frame, and user from local dot files
 initializers = [
     config.load(),
-    frame.load(),
-    user.load()
+    frame.load()
 ];
 
 Promise.all(initializers)
@@ -35,7 +30,6 @@ Promise.all(initializers)
     .then(function() {
         debug(config.ofrc);
         debug(frame.state);
-        debug(user.state);
 
         if (program.reset) {
             reset()
@@ -52,41 +46,10 @@ Promise.all(initializers)
 
 function processArgs() {
     debug('processArgs');
-    // if username was passed, set it
-    user.state.username = program.username || user.state.username;
-    // if password was passed, set it
-    user.state.password = program.password || user.state.password;
-    // if framename passed, set it
-    frame.state.name = program.framename || frame.state.name;
 
-    debug(user.state, frame.state);
+    debug(frame.state);
 
     var questions = [];
-
-    if (!user.state.username) {
-        // ask for user
-        questions.push({
-            name: 'username',
-            message: 'Enter your Openframe username:'
-        });
-    }
-
-    if (!user.state.password) {
-        // ask for pass
-        questions.push({
-            name: 'password',
-            type: 'password',
-            message: 'Enter your Openframe password:'
-        });
-    }
-
-    if (!frame.state.name) {
-        // ask frame name
-        questions.push({
-            name: 'frame_name',
-            message: 'Enter a name for this Frame:'
-        });
-    }
 
     if (config.ofrc.autoboot === undefined) {
         // ask frame name
@@ -117,14 +80,11 @@ function processArgs() {
 function reset() {
     debug('Reseting frame.');
     return new Promise(function(resolve, reject) {
-        user.state = {};
         frame.state = {};
         delete config.ofrc.autoboot;
-        user.save()
-            .then(frame.persistStateToFile)
+        frame.persistStateToFile()
             .then(config.save)
-            .then(resolve)
-            .catch(reject);
+            .then(resolve);
     });
 }
 
@@ -135,15 +95,6 @@ function reset() {
  */
 function saveAnswers(answers) {
     if (answers) {
-        if (answers.username) {
-            user.state.username = answers.username;
-        }
-        if (answers.password) {
-            user.state.password = answers.password;
-        }
-        if (answers.frame_name) {
-            frame.state.name = answers.frame_name;
-        }
         if (answers.autoboot) {
             enableAutoboot();
         } else {
@@ -152,7 +103,7 @@ function saveAnswers(answers) {
         config.ofrc.autoboot = answers.autoboot;
     }
 
-    return Promise.all([config.save(), user.save()]);
+    return config.save();
 }
 
 function enableAutoboot() {
