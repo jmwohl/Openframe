@@ -56,7 +56,8 @@ function processArgs() {
         questions.push({
             name: 'autoboot',
             message: 'Do you want to boot openframe on startup?:',
-            type: 'confirm'
+            type: 'confirm',
+            default: false
         });
     }
 

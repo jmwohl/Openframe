@@ -14,7 +14,8 @@ var url = require('url'),
     frame = require('./frame'),
     rest = require('./rest'),
     Spinner = require('cli-spinner').Spinner,
-    spinner = new Spinner('[%s]');
+    spinner = new Spinner('[%s]'),
+    chalk = require('chalk');
 
 var fc = {};
 
@@ -137,7 +138,7 @@ fc.ready = function() {
         var url = config.ofrc.network.app_base;
 
         // No current artwork... give the user a message:
-        console.log('[o]   Connected! You can now push artwork to this frame.');
+        console.log('[o]   Frame paired! You can now push artwork to this frame.');
         console.log('\n');
         console.log('This frame should now appear as ' + frame.state.name + ' when you log in to Openframe at ' + url + '.');
         console.log('\n');
@@ -161,9 +162,8 @@ fc.connect = function(userId) {
     }
 
     function displayPairingCode(frameState) {
-        console.log('[o]   New frame ready for pairing!');
+        console.log('[o]   New frame ready for pairing: ', chalk.white.bgBlue.bold(frameState.pairing_code));
         console.log('\n');
-        console.log('Pairing code: ', frameState.pairing_code);
         return frameState;
     }
 
